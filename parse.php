@@ -20,11 +20,13 @@
  *      7 = max days back
  ************************************/
 
+ // CONSTANTS
+define ("VAT", 1.24);
+define ("NORDPOOL_URL", "http://www.nordpoolspot.com/api/marketdata/page/35?currency=,,EUR,EUR");
 class ParseNordPool {
 
 public $mHourlyData;
 public $today; // 0 if no tomorrow's data. Or 1 if there is tomorrow available
-public $vat = 1.24;
 
     function __construct() {
         $this->parseData();
@@ -60,7 +62,7 @@ public $vat = 1.24;
     }
 
     function updateCache(){
-        $data = file_get_contents("http://www.nordpoolspot.com/api/marketdata/page/35?currency=,,EUR,EUR");
+        $data = file_get_contents(NORDPOOL_URL);
         $file = fopen("cache.dat", "w") or die("Unable to open file!");
         fwrite($file, $data);
         fclose($file);
@@ -91,10 +93,9 @@ public $vat = 1.24;
         if ($hours_now == 0) {
             $hours_now = 23;
             $day_now = $this->today + 1;
-
         }
         $hours_now--;
-        return round(str_replace(",",".", $this->mHourlyData->Rows[$hours_now]->Columns[$day_now]->Value) * $this->vat / 10, 2);
+        return round(str_replace(",",".", $this->mHourlyData->Rows[$hours_now]->Columns[$day_now]->Value) * VAT / 10, 2);
     }
 
     // Return array filled with selected day's prices
@@ -114,14 +115,14 @@ public $vat = 1.24;
             if ($day > 7) {
                 // If we go over board, use nearest value.
                 // Todo, use historical data for this (averages yms)
-                return round($this->mHourlyData->Rows[23]->Columns[7]->Value * $this->vat / 10, 2);
+                return round($this->mHourlyData->Rows[23]->Columns[7]->Value * VAT / 10, 2);
             }
         }
         else {
             $hour--;
         }
         
-        return str_replace(",",".", $this->mHourlyData->Rows[$hour]->Columns[$day]->Value) * $this->vat / 10;
+        return str_replace(",",".", $this->mHourlyData->Rows[$hour]->Columns[$day]->Value) * VAT / 10;
     }
 
     function getDateForDayAndHour($day, $hour) {
@@ -156,7 +157,6 @@ public $vat = 1.24;
                         ",",".",$this->getPriceForDayAndHour($day, $hour)).']';
             }
         }
-
         asort($return); // sort it so that time
         return $return;
     }
