@@ -1,0 +1,182 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <style>
+        @media only screen and (max-width: 800px) {
+            #some-element { display: none; }
+        }
+        @media only screen and (max-height: 700px) {
+            #some-element { display: none; }
+        }
+        body {
+            font-family: 'Open Sans', sans-serif;
+        }
+        #stats {
+            padding-left:5px;
+            padding-top:5px;
+        }
+        td {padding-right:1.5em;
+            font-size: 1rem;}
+        #container {
+            height: 80%;
+            max-height:600px;
+        }
+        #disclaimer {
+            text-align: center;
+        }
+    </style>
+    <title>Nord Pool spot hinnat (sis. ALV)</title>
+</head>
+<body>
+
+</div>
+    <table id="stats">
+    <tr>
+        <td id="price_now"><strong>Hinta nyt:</strong> </td>
+        <td id="avg"><strong>7 vrk keskihinta:</strong> </td>
+    </tr>
+</table>
+<div id="container" style="min-width: 310px; margin: 0 auto"></div>
+<div id="disclaimer">
+    <small>
+    Hinnat sis. alv 24 %<br />
+    Lähde: nordpoolspot.com
+    </small>
+</div>
+<script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="https://code.highcharts.com/stock/highstock.js"></script>
+<script src="https://code.highcharts.com/stock/modules/exporting.js"></script>
+
+
+<script>
+    var avg;
+    function average(callback){
+        $.get( "parse.php?mode=average", function( data ) {
+            avg = data;
+            $("#avg").append(avg + ' c/kWh');
+            callback();
+        });
+    }
+    function price_now(){
+        $.get( "parse.php?mode=now", function( data ) {
+            var price_now = data;
+            $("#price_now").append(price_now + ' c/kWh');
+        });
+    }
+
+    var now = new Date();
+    var nowHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
+    nowHour = nowHour / 1000 * 1000 + 7200000;
+
+    var chart;
+
+    function function1(callback) {
+        var initialZoom = 1;
+        var isMobile = window.matchMedia("only screen and (max-width: 800px)");
+
+        if (isMobile.matches) {
+            initialZoom = 0;
+        }
+        $.getJSON('parse.php?callback=?', function (data) {
+            Highcharts.setOptions({
+                lang: {
+                    months: ['Tammikuu', 'Helmikuu', 'Mars', 'Avril', 'Mai', 'Juin',  'Juillet', 'Août', 'Septembre', 'Octobre', 'Marraskuu', 'Joulukuu'],
+                    weekdays: ['Sunnuntai', 'Maanantai', 'Tiistai', 'Keskiviikko', 'Torstai', 'Perjantai', 'Lauantai'],
+                    shortMonths:['Tammi', 'Helmi', 'Maalis', 'Huhti','Touko', 'Kesä', 'Heinä', 'Elo', 'Syys', 'Loka', 'Marras', 'Joulu']
+                }
+            });
+
+            var dataObject = {
+
+                chart: {
+                    renderTo: 'container',
+                    pinchType: 'none'
+                },
+                legend: {
+                    enabled:false
+                },
+                rangeSelector : {
+                    selected : initialZoom,
+                    buttons: [{
+                        type: 'day',
+                        count: 1,
+                        text: '1 pv'
+                    }, {
+                        type: 'day',
+                        count: 3,
+                        text: '3 pv'
+                    }, {
+                        type: 'day',
+                        count:7,
+                        text: 'viikko'
+                    }]
+                },
+                tooltip: {
+                    valueDecimals: 2
+                },
+                yAxis: [{
+                    title: {
+                        text: 'hinta c/kWh'
+                    },
+                    tickInterval:1,
+                    plotLines: [{
+                        color: 'red',
+                        label: {
+                            text: '7 vrk keskihinta ' + avg + "c/kWh",
+                            zIndex: 1,
+                            useHTML: true
+                        },
+                        value: avg,
+                        width: '1',
+                        zIndex: 99,
+                        useHTML: true
+
+                    }]
+                },
+                    {
+                        linkedTo:0,
+                        opposite:false
+                    }],
+                xAxis: {
+                    type: 'datetime'
+                },
+                series: [{
+                    zIndex: 999,
+                    // color: '#000000',
+                    useHTML: true,
+                    type:'column',
+                    data:data
+                }]
+            };
+
+            chart = new Highcharts.StockChart(dataObject);
+            callback();
+        });
+    }
+
+    function update(){
+        var min = chart.series[0].dataMin;
+        var max = chart.series[0].dataMax;
+
+        for (var i = 0; i < chart.series[0].points.length; i++) {
+            if (chart.series[0].points[i].x == nowHour) {
+                chart.series[0].points[i].update({
+                    color: '#00FFFF'
+                });
+                chart.series[0].points[i].select();
+                chart.series[0].points[i].select();
+            }
+        }
+    }
+
+    average(function() {
+        function1(function() {
+            update();
+        });
+    });
+    price_now();
+
+</script>
+</body>
+</html>
