@@ -1,6 +1,8 @@
 <html>
 <head>
     <meta charset="utf-8">
+    <meta name="description" content="Pörssisähkön hinta Nordpoolista.">
+    <meta name="keywords" content="Sähkö, hinta, nordpool, alv, päivittäin">
     <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <style>
         @media only screen and (max-width: 800px) {
@@ -37,7 +39,7 @@
         <td id="avg"><strong>7 vrk keskihinta:</strong> </td>
     </tr>
 </table>
-<div id="container" style="min-width: 310px; margin: 0 auto"></div>
+<div id="container" style="min-width: 310px; margin: 0 auto"><center><img src="load.gif" alt="loading" /></center></div>
 <div id="disclaimer">
     <small>
     Hinnat sis. alv 24 %<br />
@@ -54,21 +56,37 @@
     function average(callback){
         $.get( "parse.php?mode=average", function( data ) {
             avg = data;
-            $("#avg").append(avg + ' c/kWh');
+            $("#avg").append(avg + ' snt/kWh');
             callback();
         });
     }
     function price_now(){
         $.get( "parse.php?mode=now", function( data ) {
             var price_now = data;
-            $("#price_now").append(price_now + ' c/kWh');
+            $("#price_now").append(price_now + ' snt/kWh');
         });
     }
 
     var now = new Date();
     var nowHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours());
-    nowHour = nowHour / 1000 * 1000 + 7200000;
+    
+    var today = new Date();
 
+    Date.prototype.stdTimezoneOffset = function() {
+        var jan = new Date(this.getFullYear(), 0, 1);
+        var jul = new Date(this.getFullYear(), 6, 1);
+        return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+    }
+
+    Date.prototype.dst = function() {
+        return this.getTimezoneOffset() < this.stdTimezoneOffset();
+    }
+    if (today.dst()) {
+        nowHour = nowHour / 1000 * 1000 + 10800000;
+    } else {
+        nowHour = nowHour / 1000 * 1000 + 7200000;
+    }
+    
     var chart;
 
     function function1(callback) {
@@ -81,7 +99,7 @@
         $.getJSON('parse.php?callback=?', function (data) {
             Highcharts.setOptions({
                 lang: {
-                    months: ['Tammikuu', 'Helmikuu', 'Mars', 'Avril', 'Mai', 'Juin',  'Juillet', 'Août', 'Septembre', 'Octobre', 'Marraskuu', 'Joulukuu'],
+                    months: ['Tammikuu', 'Helmikuu', 'Maaliskuu', 'Huhtikuu', 'Mai', 'Juin',  'Juillet', 'Août', 'Septembre', 'Octobre', 'Marraskuu', 'Joulukuu'],
                     weekdays: ['Sunnuntai', 'Maanantai', 'Tiistai', 'Keskiviikko', 'Torstai', 'Perjantai', 'Lauantai'],
                     shortMonths:['Tammi', 'Helmi', 'Maalis', 'Huhti','Touko', 'Kesä', 'Heinä', 'Elo', 'Syys', 'Loka', 'Marras', 'Joulu']
                 }
@@ -113,7 +131,10 @@
                     }]
                 },
                 tooltip: {
-                    valueDecimals: 2
+                    xDateFormat: '%A<br />%H:%M %e.%m.%Y',
+                    pointFormat: '{series.name}: {point.y} snt/kWh<br/>',
+                    valueDecimals: 2,
+                    zIndex: 9999
                 },
                 yAxis: [{
                     title: {
@@ -123,26 +144,27 @@
                     plotLines: [{
                         color: 'red',
                         label: {
-                            text: '7 vrk keskihinta ' + avg + "c/kWh",
+                            text: '7 vrk keskihinta ' + avg + "snt/kWh",
                             zIndex: 1,
                             useHTML: true
                         },
                         value: avg,
                         width: '1',
-                        zIndex: 99,
+                        zIndex: 100,
                         useHTML: true
 
                     }]
                 },
-                    {
-                        linkedTo:0,
-                        opposite:false
-                    }],
+                {
+                    linkedTo:0,
+                    opposite:false
+                }],
                 xAxis: {
                     type: 'datetime'
                 },
                 series: [{
-                    zIndex: 999,
+                    name: 'Hinta',
+                    zIndex: 200,
                     // color: '#000000',
                     useHTML: true,
                     type:'column',
@@ -173,9 +195,19 @@
     average(function() {
         function1(function() {
             update();
+            price_now();
         });
     });
-    price_now();
+
+</script>
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-73767922-1', 'auto');
+  ga('send', 'pageview');
 
 </script>
 </body>

@@ -122,6 +122,7 @@ public $today; // 0 if no tomorrow's data. Or 1 if there is tomorrow available
             $hour--;
         }
         
+        // This return property of non object
         return str_replace(",",".", $this->mHourlyData->Rows[$hour]->Columns[$day]->Value) * VAT / 10;
     }
 
@@ -130,7 +131,8 @@ public $today; // 0 if no tomorrow's data. Or 1 if there is tomorrow available
 
         $date = $this->mHourlyData->Rows[$hour]->Columns[$day]->Name;
         $arr = explode("-",$date);
-        return mktime($hour + 2, 0, 0, $arr[1], $arr[0], $arr[2]);
+        $dst = date("I");
+        return mktime($hour + 2 + $dst, 0, 0, $arr[1], $arr[0], $arr[2]);
     }
 
     function get7DayAvg(){
