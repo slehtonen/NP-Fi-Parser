@@ -36,16 +36,20 @@ public $today; // 0 if no tomorrow's data. Or 1 if there is tomorrow available
     /* Updates cache and sets latest available data to global variable for use */
     function parseData() {
 
-        // If cache does not exist, create file and update
-        if (file_exists ("cache.dat" ) === false) {
+        // If cache does not exist, or is outdated (>12 hours old) update cache
+        if (file_exists ("cache.dat") === false) {
+	    echo "cache.dat missing, trying to create the file."
+	    $this->updateCache();
+	}
+	if ((filesize('cache.dat') == 0)
+	        || (time() - filemtime("cache.dat") > 60*60*12)) {
             $this->updateCache();
         }
-
-        // If last modified over 12 hours ago, update
-        if (time() - filemtime("cache.dat") > 60*60*12) {
-            $this->updateCache();
+        // check if file creation was success
+        if (file_exists ("cache.dat") === false) {
+            echo "couldn't create cache.dat, check permissions.";
         }
-
+ 
         // Get data, update globals
         $this->getData();
 
@@ -64,7 +68,7 @@ public $today; // 0 if no tomorrow's data. Or 1 if there is tomorrow available
     function updateCache(){
         $data = file_get_contents(NORDPOOL_URL);
         $file = fopen("cache.dat", "w") or die("Unable to open file!");
-        fwrite($file, $data);
+        fwrite($file, $data) or die ("Unable to write cache, check permissions");
         fclose($file);
     }
     function getData() {
